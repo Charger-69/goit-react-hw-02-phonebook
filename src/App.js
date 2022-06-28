@@ -1,58 +1,63 @@
 import React, {Component} from 'react';
 import Wrapper from "components/Wrapper";
 import Section from "components/Section";
-import FeedbackOptions from 'components/FeedbackOptions';
-import Statistics from 'components/Statistics';
+import ContactForm from 'components/ContactForm';
+import Filter from 'components/Filter';
+import ContactList from 'components/ContactList';
 import Notification from 'components/Notification';
 
 class App extends Component{
     state = {
-        good: 0,
-        neutral: 0,
-        bad: 0
+        contacts: [],
+        filter: ''
     };
 
-    handleFeedback = (type) => {
+    formSubmitHandler = data => {
+        const { contacts } = this.state;
+
+        if (contacts.find(contact => contact.name.toLowerCase() === data.name.toLowerCase())) {
+            this.setState({
+                filter: ''
+            });
+            
+            return alert(`${data.name} is already in contacts`);
+        }
+
         this.setState(prevState => ({
-            [type]: prevState[type] + 1,
+            contacts: [...prevState.contacts, data],
+            filter: ''
         }));
-    };
-
-    countTotalFeedback = () => {
-        const { good, neutral, bad } = this.state;
-        return good + neutral + bad;
-    };
-
-    countPositiveFeedbackPercentage = () => {
-        const { good } = this.state;
-        const { countTotalFeedback } = this;
-        return Math.round(good / countTotalFeedback() * 100) + '%';
     }
-    
+
+    handleFilterChange = event => {
+        const { name, value } = event.currentTarget
+        this.setState({
+            [name]: value,
+        });
+    };
+
+    deleteContact = (contactId) => {
+        this.setState(prevState => ({
+            contacts: prevState.contacts.filter(contact => contact.id!==contactId),
+        }))
+    }
 
     render() {
-        const { good, neutral, bad } = this.state;
-        const { handleFeedback, countTotalFeedback, countPositiveFeedbackPercentage } = this;
+        const { formSubmitHandler, handleFilterChange, deleteContact } = this;
+        const { contacts, filter } = this.state;
 
         return (
             <Wrapper>
-                <Section title={'Please leave feedback'}>
-                    <FeedbackOptions
-                        onLeaveFeedback = { handleFeedback }
-                    />
+                <Section title={'Phonebook'}>
+                    <ContactForm onSubmit={ formSubmitHandler }/>
                 </Section>
 
-                <Section title={'Statistics'}>
-                    {countTotalFeedback() ? (
-                        <Statistics
-                            good={good}
-                            neutral={neutral}
-                            bad={bad}
-                            total={countTotalFeedback()}
-                            positivePercentage={countPositiveFeedbackPercentage()}
-                        />
+                <Section title={'Contacts'}>
+                    <Filter name={filter} onFilterChange={handleFilterChange} />
+                    {contacts.length > 0 ? (
+                        <ContactList data={contacts} filterName={filter} onDeleteContact={ deleteContact }/>
                     ) : (
-                        <Notification message="There is no feedback" />
+                        <Notification message="There are no contacts yet" />
                     )}
                 </Section>
             </Wrapper>
